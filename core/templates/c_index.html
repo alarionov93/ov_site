@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+    {% load static %}
+
+    <!-- <section class="" id="order-table"> -->
+        {#{% block order-table %}#}
+        {#{% endblock %}#}
+    <!-- </section> -->
+    <!-- <p>Testing page</p> -->
+    <!-- <span>Server says: {{ test }}</span> -->
+    <div class="" data-bind="foreach: { data: imgPreviews, as: 'prev'}">
+        <div>
+            <img data-bind="attr: { 'src': prev.linkPrev }, click: $root.setActiveImgPreview.bind($data)" width="20" height="20">
+        </div>
+    </div>
+    <!-- ko if: $root.isEditingImgsData() == true -->
+        <!-- <div>
+            <input type="text" data-bind="textInput: imgFragment.author">
+            <textarea data-bind="textInput: imgFragment.description"></textarea>
+        </div> -->
+        <div style="float: right; position: absolute; top: 200px; right: 100px;">
+            <div style="background-color: #ffff00;">
+                <p data-bind="text: chosenText().id"></p>
+                <p data-bind="text: chosenText().author()"></p>
+            </div>
+            <div data-bind="foreach: { data: $root.allTexts, as: 'txt' }">
+                <div>
+                    <input type="hidden" data-bind="text: txt.id"></input>
+                    <p data-bind="text: txt.author"></p>
+                    <p data-bind="text: txt.description"></p>
+                </div>
+            </div>
+        </div>
+    <!-- /ko -->
+    <!-- ko if: typeof($root.activeImgPreview()) !== 'undefined' -->
+        <div class="image-preview" data-bind="attr: { 'id': 'image-background-1' }, style: { 'backgroundImage':  'url(\'' + activeImgPreview().linkFull + '\')'}" style="background-repeat: no-repeat; background-size: contain; width: 900px; height: 600px;">
+            <div id="image-overlay-1" style="opacity: 0.5; background-color: green; width: 0px; height: 0px;top: 0px; left: 0px; position: relative;"></div>
+            <div style="position: relative; top: 30px; left: 200px;">
+                <button type="button" class="btn btn-success" data-bind="visible: relationIsValid, click: setRelation">Готово</button>
+            </div>
+        </div>
+        <div data-bind="foreach: { data: activeImgPreview().imgFragments, as: 'imgFragment'}" style="float: right; position: absolute; top: 200px; right: 100px;">
+        <!-- ko if: $root.isEditingImgsData() == false -->
+            <div>
+                <span data-bind="text: imgFragment.author"></span>
+                <span data-bind="text: imgFragment.description"></span>
+            </div>
+        <!-- /ko -->
+        </div>
+    <!-- /ko -->
+
+    <aside style="background-color: #333; padding: 0 !important;"  class="portfolio-box">
+
+    </aside>
+{% endblock %}
+
