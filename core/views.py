@@ -1,5 +1,6 @@
 import json
 
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
 from django.http import HttpResponse
 from core import models
@@ -9,17 +10,42 @@ import glob
 
 def index(request):
 	image_fragments = models.ImageFragment.objects.all()
-	print(image_fragments)
-	# for i_f in image_fragments:
-		# i_f.delete()
+	# print(image_fragments) 
+	# x_lt: 97, y_lt: 35, x_rb: 314, y_rb: 185
+	# x_lt: 100, y_lt: 332, x_rb: 299, y_rb: 135
+	# x_lt: 104, y_lt: 520, x_rb: 300, y_rb: 57
+	# for frg in image_fragments:
+	# 	frg.image_id = None
+	# 	frg.image_id = None
+	# 	frg.x_lt = None
+	# 	frg.y_lt = None
+	# 	frg.x_rb = None
+	# 	frg.y_rb = None
+	# 	frg.save()
 
-	# imageFragment1 = models.ImageFragment.objects.create(author='sm', description='test 2')
-	# imageFragment2 = models.ImageFragment.objects.create(author='db', description='description of fragment 2')
+		# print(frg.id, frg.author)
+	# for number in [1,2,3,4]:
+		# link_prev = '/media/imgs/test%s.png' % number
+		# link_full = '/media/imgs/test%s.png' % number
+		# image = models.Image.objects.create(link_prev=link_prev, link_full=link_full)
+		# image.save()
+
+	# imageFragment1 = models.ImageFragment.objects.create(author='Daniel Kurushin', description='In the following example, the <div> element will be empty for “Mercury”, but populated for “Earth”. That’s because Earth has a non-null capital property, whereas “Mercury” has null for that property.')
+	# imageFragment2 = models.ImageFragment.objects.create(author='Alex Larionov', description='It’s important to understand that the if binding really is vital to make this code work properly. Without it, there would be an error when trying to evaluate capital.cityName in the context of “Mercury” where capital is null. In JavaScript, you’re not allowed to evaluate subproperties of null or undefined values.')
 	# imageFragment1.save()
 	# imageFragment2.save()
+	admin_status = 0
+	admin_url_prefix = 'a34f25h16'
+	req_stat = request.GET.get('stat', None)
+	if req_stat:
+		if req_stat == admin_url_prefix:
+			admin_status = 1
 
-	return render(request, 'c_index.html', context = {'test': 'test'})
+	print(admin_status)
 
+	return render(request, 'c_index.html', context = {'admin': admin_status})
+
+@csrf_exempt
 def previews(request):
 	if request.is_ajax() and request.method == 'POST':
 		# data = [
@@ -50,11 +76,22 @@ def previews(request):
 		return HttpResponse(json.dumps(data), content_type='application/json')
 
 # In params: image_id, img_fragment_id, x_lt, y_lt, x_rb, y_rb
+@csrf_exempt
 def set_relation_of_fragment(request):
-	if request.method == 'POST':
-		ctx = {}
-		# get coordinates and image_id for ImageFragment
-		return HttpResponse(json.dumps(ctx), content_type='application/json')
+	if request.is_ajax() and request.method == 'POST':
+		if request.POST.get('text_fragments'):
+			for frg in json.loads(request.POST.get('text_fragments')):
+				image_fragment = models.ImageFragment.objects.get(id=frg['id'])
+				image_fragment.image = models.Image.objects.get(id=frg['image_id'])
+				image_fragment.x_lt = frg['x_lt']
+				image_fragment.y_lt = frg['y_lt']
+				image_fragment.x_rb = frg['x_rb']
+				image_fragment.y_rb = frg['y_rb']
+				image_fragment.save()
+
+			ctx = {'status': 0, 'previews': [x.to_json() for x in models.Image.objects.all()]}
+			# get coordinates and image_id for ImageFragment
+			return HttpResponse(json.dumps(ctx), content_type='application/json')
 	
 	return HttpResponse(json.dumps({'ERROR: Method not allowed.'}), content_type='application/json')
 

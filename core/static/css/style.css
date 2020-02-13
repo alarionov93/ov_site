@@ -1,0 +1,41 @@
+
+section {
+  padding: 10px 0;
+}
+.background,
+.background-waiter {
+  display: none;
+  z-index: 87 !important;
+  top: 0;
+  left: 0;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: rgba(34, 34, 34, 0.49);
+}
+.background-waiter {
+    display: block;
+}
+.background {
+    /*visibility:hidden;*/
+    display: block;
+}
+.active-preview {
+  border: 3px solid yellow;
+}
+#carousel {
+    width:100%;
+    height: 40px;
+    /*background-color: #ff0000;*/
+    
+    overflow: scroll;
+    white-space:nowrap;
+}
+
+/*.slide {*/
+  /*float: left;*/
+/*}*/
+
+#carousel .slide {
+    display: inline;
+}

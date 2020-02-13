@@ -11,6 +11,24 @@ $page = {};
 //     $page.orderNumber *= 10;
 // }
 
+var top_left = 0;
+var bottom_right = 0;
+var x_old = 0;
+var y_old = 0;
+
+var colors = [
+	"#ff0000",
+	"#cc00ff",
+	"#0015ff",
+	"#00c8ff",
+	"#00ff2f",
+	"#ffea00",
+	"#ff7300",
+	"#ff0000"
+	// "#",
+	// "#",
+];
+
 function Waiter() {
     var self = this;
     self.status = ko.observable(false);
@@ -38,23 +56,78 @@ function getCookie(name) {
     return cookieValue;
 }
 
+function resetSelectedFragment(evt) {
+	if (evt) { // if there is evt, user clicked to fragment to reset it, if not, user clicked to "ready" btn
+		evt.stopPropagation();
+		VM.chosenText().coordinates(null);
+		VM.chosenText().imageId = null;
+		VM.changesAreSaved(true);
+	}
+	top_left = 0;
+	bottom_right = 0;
+	x_old = 0;
+	y_old = 0;
+	$("#image-overlay-1").css('left', 0);
+	$("#image-overlay-1").css('top', 0);
+	$("#image-overlay-1").css('width', 0);
+	$("#image-overlay-1").css('height', 0);
+};
+
 function ViewModel() {
 	var self = this;
 
 	self.waiter = new Waiter();
 
+	self.getMode = function() {
+		if (localStorage.getItem('mode') === null) {
+			return false;
+		} else {
+			return localStorage.getItem('mode') == '0' ? false : true;
+		}
+	};
+	var selectedMode = self.getMode();
+
 	self.textFieldOpened = ko.observable(false);
 	self.imgPreviews = ko.observableArray([]);
-	self.isEditingImgsData = ko.observable(false);
+	// self.isEditingImgsData = ko.observable(self.getMode());
+	self.isEditingImgsData = ko.observable(selectedMode);
 	self.allTexts = ko.observableArray([]);
 	self.chosenText = ko.observable();
+	self.textsReadyToSend = ko.observableArray([]);
+	self.changesAreSaved = ko.observable(true);
+	self.chosenAreaExists = function () {
+		return parseInt($("#image-overlay-1").css('width').split('px')) > 0;
+	};
+	self.textsReadyToSend.exist = function(id) {
+		for (var i = 0; i < self.textsReadyToSend().length; i++) {
+			if(self.textsReadyToSend()[i].id == id) {
+				return 1;
+			}
+		}
+		return -1;
+	};
+
+	self.turnEditableModeOn = function() {
+		self.isEditingImgsData(true);
+		localStorage.setItem('mode', 1);
+	};
+	self.turnEditableModeOff = function() {
+		self.isEditingImgsData(false);
+		localStorage.setItem('mode', 0);
+	};
 	// self.coordinatesOfChosenFragment = ko.observableArray();
 	self.relationIsValid = ko.computed(function() {
-		return !!self.chosenText() && !!self.chosenText().coordinates();
+		try {
+			return !!self.chosenText().coordinates() &&
+			!!self.chosenText().coordinates()['x_lt'] &&
+			!!self.chosenText().coordinates()['y_lt'] &&
+			!!self.chosenText().coordinates()['x_rb'] &&
+			!!self.chosenText().coordinates()['y_rb'];
+		} catch (e) {
+			console.error('Coordinates are not set yet!');
+			return false;
+		}
 	}, self);
-	// self.relationIsValid.subscribe(function(newValue) {
-	// 	console.log(newValue);
-	// });
 	self.getImgPreviews = function() {
 		self.waiter.show();
 		var csrftoken = getCookie('csrftoken');
@@ -109,24 +182,105 @@ function ViewModel() {
 	self.setRelation = function() {
 		// ajax request to server here, save data
 		self.chosenText().hasImage(true);
+		self.chosenText().imageId = self.activeImgPreview().id;
 		// push text fragment back to allTexts
 		// TODO: check if it has image and coordinates
-		self.allTexts.push(self.chosenText());
-		// remove text fragment that has image from allTexts here:
+		self.allTexts.unshift(self.chosenText()); //add element to the beginning of array
+		// update chosenText
+		var new_id;
 		for (var i = 0; i < self.allTexts().length; i++) {
-        	if (self.allTexts()[i].hasImage == true) {
-        		self.allTexts()[i]; //new text fragment with image and coord
-        	}
+			if (self.allTexts()[i].hasImage() == false) {
+				new_id = self.allTexts()[i].id;
+				break;
+			}
+		}
+        // change chosenTextId in localStorage
+        if (new_id) { // TODO: check this!
+        	localStorage.setItem('chosenTextId', new_id);
+        	self.updateTexts();
+        } else {
+        	console.log('Adding data finished!');
         }
-        self.updateTexts();
+        resetSelectedFragment();
 
 		// 2. Get new list of images and text fragments - ???? OR not to send the same data again?
     	//self.updateTexts();
 		console.log("Setting relation...");
 	};
+	self.sendReadyTextFragments = function() {
+		var textFragments = [];
+
+		for (var i = 0; i < self.allTexts().length; i++) {
+        	if (self.allTexts()[i].hasImage() == true) {
+        		if (self.textsReadyToSend.exist(self.allTexts()[i].id) == -1) {
+        			self.textsReadyToSend.push(self.allTexts()[i]); //new text fragment with image and coord
+        		}
+        	}
+        };
+        console.log(self.textsReadyToSend());
+        for (var i = 0; i < self.textsReadyToSend().length; i++) {
+        	var textFragmentInfo = {};
+        	textFragmentInfo.image_id = self.textsReadyToSend()[i].imageId;
+			textFragmentInfo.id = self.textsReadyToSend()[i].id
+			textFragmentInfo.x_lt = self.textsReadyToSend()[i].coordinates()['x_lt'];
+			textFragmentInfo.y_lt = self.textsReadyToSend()[i].coordinates()['y_lt'];
+			textFragmentInfo.x_rb = self.textsReadyToSend()[i].coordinates()['x_rb'];
+			textFragmentInfo.y_rb = self.textsReadyToSend()[i].coordinates()['y_rb'];
+			textFragments.push(textFragmentInfo);
+        }
+        // send here
+        if (self.textsReadyToSend().length > 0) {
+			// $.post();
+			self.waiter.show();
+			console.log('Send to server...');
+			var csrftoken = getCookie('csrftoken');
+			$.post("fragments/set/", {csrfmiddlewaretoken: csrftoken, text_fragments: JSON.stringify(textFragments)}).then(function (resp) {
+	            console.log(resp);
+	            if(resp.length == 0) {
+	                // TODO: handle it?
+	            } else {
+	            	for (var i = self.allTexts().length - 1; i >= 0; i--) {
+	            		if(self.allTexts()[i].hasImage() == true) {
+	            			self.allTexts.splice(i, 1);
+	            		}
+	            	}
+
+	            	self.imgPreviews.removeAll();
+	            	for (var i = 0; i < resp["previews"].length; i++) {
+	                	self.imgPreviews.push(new Image(resp["previews"][i].id, resp["previews"][i].link_prev, resp["previews"][i].link_full, resp["previews"][i].fragments));
+	                }
+                	var activePreviewId = self.activeImgPreview().id;
+                	for (var i = 0; i < self.imgPreviews().length; i++) {
+                		self.imgPreviews()[i].isActive(false);
+                	}
+					for (var i = 0; i < self.imgPreviews().length; i++) {
+						if (self.imgPreviews()[i].id == activePreviewId) {
+							self.imgPreviews()[i].isActive(true);
+							self.activeImgPreview(self.imgPreviews()[i]);
+						}
+					}
+
+	                self.textsReadyToSend.removeAll();
+	                if (self.chosenAreaExists()) {
+	                	self.changesAreSaved(false);
+	                } else {
+	            		self.changesAreSaved(true);
+	                }
+	            	self.waiter.hide();
+	            }
+	        }).always(function () {
+	        	// TODO: make success and fail callbacks
+	        });
+        } else {
+        	console.log('Nothing to send...');
+        }
+	};
+	var t = setInterval(self.sendReadyTextFragments, 30000);
 }
 
 function Image(id, linkPrev, linkFull, fragments) {
+
+	var self = this;
 	this.id = id;
 	this.linkPrev = linkPrev;
 	this.linkFull = linkFull;
@@ -134,10 +288,27 @@ function Image(id, linkPrev, linkFull, fragments) {
 
 	this.imgFragments = ko.observableArray(fragments);
 
+	this.prepareFragments = function() {
+		for (var i = 0; i < self.imgFragments().length; i++) {
+			if (i > 0) {
+				self.imgFragments()[i]['y_lt'] = parseInt(self.imgFragments()[i]['y_lt']) - parseInt(prev_y_lt);
+			};
+			var prev_y_lt = parseInt(self.imgFragments()[i]['y_lt']);
+		}
+	};
+	this.setColors = function() {
+		for (var i = 0; i < self.imgFragments().length; i++) {
+			self.imgFragments()[i]['color'] = colors[i];
+		}
+	};
+	this.setColors();
+	// this.prepareFragments();
+
 }
 
 function TextFragment(id, author, description, hasImage) {
 	this.id = id;
+	this.imageId = null;
 	this.author = ko.observable(author);
 	this.description = ko.observable(description);
 	this.hasImage = ko.observable(hasImage);
@@ -191,49 +362,38 @@ $(document).ready(function() {
 
 	});
 
-	var top_left = 0;
-	var bottom_right = 0;
-	var x_old = 0;
-	var y_old = 0;
-	$(document).on("click", ".image-preview",function(evt) {
-		if(typeof(VM.activeImgPreview()) !== 'undefined' && bottom_right == 0) {
+	$(document).on("click", ".image-preview", function(evt) {
+		if(typeof(VM.activeImgPreview()) !== 'undefined' && bottom_right == 0 && evt.target.nodeName !== "BUTTON" && VM.isEditingImgsData() == true) {
 			console.log(evt);
-			var x_lt = evt.offsetX;
-			var y_lt = evt.offsetY;
-			var x_br = evt.offsetX - x_old;
-			var y_br = evt.offsetY - y_old;
+			var x_lt = evt.pageX;
+			var y_lt = evt.pageY;
+			var x_rb = evt.pageX - x_old;
+			var y_rb = evt.pageY - y_old;
 			if (!top_left) {
 				// $("#image-background-1").html('');
 				$("#image-overlay-1").css('left', x_lt);
 				$("#image-overlay-1").css('top', y_lt);
 				x_old = x_lt;
 				y_old = y_lt;
+				VM.chosenText().coordinates({'x_lt': x_lt, 'y_lt': y_lt});
 				top_left = 1;
 			} else {
-				$("#image-overlay-1").css('width', x_br);
-				$("#image-overlay-1").css('height', y_br);
+				$("#image-overlay-1").css('width', x_rb);
+				$("#image-overlay-1").css('height', y_rb);
 				bottom_right = 1;
-				VM.chosenText().coordinates({'x_lt': x_lt, 'y_lt': y_lt, 'x_br': x_br, 'y_br': y_br});
+				var coord_lt = VM.chosenText().coordinates();
+				VM.chosenText().coordinates(null);
+				VM.chosenText().coordinates({'x_lt': coord_lt['x_lt'], 'y_lt': coord_lt['y_lt'],'x_rb': x_rb,'y_rb': y_rb});
+				VM.changesAreSaved(false);
+				console.log(VM.chosenText().coordinates());
+				// TODO: handler of chosen area here!
+				// VM.chosenAreaExists(true);
 				// set coordinates to chosenText here, add button 'ok' anywhere near hear
 			};
 		};
 	});
-	function resetSelectedFragment() {
-		// VM.coordinatesOfFragment([0, 0, 0, 0]);
-		VM.chosenText().coordinates(null);
-	};
-	$(document).on("click", "#image-overlay-1",function(evt) {
-		evt.stopPropagation();
-		top_left = 0;
-		bottom_right = 0;
-		x_old = 0;
-		y_old = 0;
-		$("#image-overlay-1").css('left', 0);
-		$("#image-overlay-1").css('top', 0);
-		$("#image-overlay-1").css('width', 0);
-		$("#image-overlay-1").css('height', 0);
-		resetSelectedFragment();
-	});
+
+	$(document).on("click", "#image-overlay-1", resetSelectedFragment);
 	$(window).resize(function() {
 	
 	});
@@ -242,15 +402,15 @@ $(document).ready(function() {
 		
 	});
 
-    $('body').on('keydown', function (evt) {
-        if (evt.keyCode === 9) {
-            var hasClass = $(document.activeElement).hasClass('enum');
-            if(hasClass) {
-                if (parseInt(document.activeElement.attributes.tabindex.nodeValue) === VM.orderUnits().length * 3) {
-                    console.log("Copying last line..");
-                    VM.copyLastOrderUnit();
-                }
-            }
-        }
-    });
+    // $('body').on('keydown', function (evt) {
+    //     if (evt.keyCode === 9) {
+    //         var hasClass = $(document.activeElement).hasClass('enum');
+    //         if(hasClass) {
+    //             if (parseInt(document.activeElement.attributes.tabindex.nodeValue) === VM.orderUnits().length * 3) {
+    //                 console.log("Copying last line..");
+    //                 VM.copyLastOrderUnit();
+    //             }
+    //         }
+    //     }
+    // });
 });
