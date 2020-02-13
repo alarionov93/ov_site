@@ -275,7 +275,7 @@ function ViewModel() {
         	console.log('Nothing to send...');
         }
 	};
-	var t = setInterval(self.sendReadyTextFragments, 30000);
+	var t = setInterval(self.sendReadyTextFragments, 10000);
 }
 
 function Image(id, linkPrev, linkFull, fragments) {

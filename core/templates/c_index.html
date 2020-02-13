@@ -68,6 +68,7 @@
             <input type="text" data-bind="textInput: imgFragment.author">
             <textarea data-bind="textInput: imgFragment.description"></textarea>
         </div> -->
+        {% if admin == 1 %}
         <div style="float: right; position: absolute; top: 150px; right: 10px; max-width: 50%;padding: 10px;">
             <div style="background-color: #ffff00; padding: 10px;" data-bind="if: chosenText">
                 <p data-bind="text: chosenText().id"></p>
@@ -84,6 +85,7 @@
                 <!-- /ko -->
             </div>
         </div>
+        {% endif %}
     <!-- /ko -->
     <!-- ko if: typeof($root.activeImgPreview()) !== 'undefined' -->
         <div class="image-preview" data-bind="attr: { 'id': 'image-background-1' }, style: { 'backgroundImage':  'url(\'' + activeImgPreview().linkFull + '\')'}" style="background-repeat: no-repeat; background-size: contain; width: 2000px; height: 900px;">
@@ -101,12 +103,16 @@
             </div>
         </div>
         <div data-bind="foreach: { data: activeImgPreview().imgFragments, as: 'imgFragment'}" style="float: right; position: absolute; top: 150px; right: 10px; max-width: 50%;padding: 10px;">
+        {% if admin == 1 %}
         <!-- ko if: $root.isEditingImgsData() == false -->
+        {% endif %}
             <div data-bind="style: { 'border-bottom': '1px solid '+imgFragment.color }" style="background-color: #ffffff; padding: 10px;">
                 <b><span data-bind="text: imgFragment.author"></span>:</b> 
                 <span data-bind="text: imgFragment.description"></span>
             </div>
+        {% if admin == 1 %}
         <!-- /ko -->
+        {% endif %}
         </div>
     <!-- /ko -->
     </section>

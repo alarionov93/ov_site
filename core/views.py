@@ -15,6 +15,7 @@ def index(request):
 	# x_lt: 100, y_lt: 332, x_rb: 299, y_rb: 135
 	# x_lt: 104, y_lt: 520, x_rb: 300, y_rb: 57
 	# for frg in image_fragments:
+	# 	print(frg.id, frg.author)
 	# 	frg.image_id = None
 	# 	frg.image_id = None
 	# 	frg.x_lt = None
@@ -41,7 +42,7 @@ def index(request):
 		if req_stat == admin_url_prefix:
 			admin_status = 1
 
-	print(admin_status)
+	# print(admin_status)
 
 	return render(request, 'c_index.html', context = {'admin': admin_status})
 
