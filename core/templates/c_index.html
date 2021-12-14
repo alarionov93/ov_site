@@ -73,14 +73,14 @@
             <div style="background-color: #ffff00; padding: 10px;" data-bind="if: chosenText">
                 <p data-bind="text: chosenText().id"></p>
                 <p data-bind="text: chosenText().author()"></p>
-                <p data-bind="text: chosenText().description()"></p>
+                <p data-bind="html: chosenText().description()"></p>
             </div>
             <div data-bind="foreach: { data: $root.allTexts, as: 'txt' }">
                 <!-- ko if: txt.hasImage() == false -->
                 <div style="background-color: #ffffff; padding: 10px;">
                     <input type="hidden" data-bind="text: txt.id"></input>
                     <p data-bind="text: txt.author"></p>
-                    <p data-bind="text: txt.description"></p>
+                    <p data-bind="html: txt.description"></p>
                 </div>
                 <!-- /ko -->
             </div>
@@ -88,7 +88,7 @@
         {% endif %}
     <!-- /ko -->
     <!-- ko if: typeof($root.activeImgPreview()) !== 'undefined' -->
-        <div class="image-preview" data-bind="attr: { 'id': 'image-background-1' }, style: { 'backgroundImage':  'url(\'' + activeImgPreview().linkFull + '\')'}" style="background-repeat: no-repeat; background-size: contain; width: 2000px; height: 900px;">
+        <div class="image-preview" data-bind="attr: { 'id': 'image-background-1' }, style: { 'backgroundImage':  'url(\'' + activeImgPreview().linkFull + '\')'}" style="background-repeat: no-repeat; background-size: contain; width: 600px; height: 900px;">
             <!-- TODO: move image-overlay-1 and btn to ko if: isEditingImgsData == true block -->
             <div id="image-overlay-1" style="opacity: 0.5; background-color: green; width: 0px; height: 0px;top: 0px; left: 0px; position: absolute;"></div>
             <div style="position: relative; top: 30px; left: 200px;" data-bind="if: $root.relationIsValid()">
@@ -108,7 +108,7 @@
         {% endif %}
             <div data-bind="style: { 'border-bottom': '1px solid '+imgFragment.color }" style="background-color: #ffffff; padding: 10px;">
                 <b><span data-bind="text: imgFragment.author"></span>:</b> 
-                <span data-bind="text: imgFragment.description"></span>
+                <span data-bind="html: imgFragment.description"></span>
             </div>
         {% if admin == 1 %}
         <!-- /ko -->
