@@ -1,7 +1,7 @@
 asgiref==3.2.3
 Django==3.0.2
 django-bootstrap3==12.0.3
-lxml==4.5.0
+lxml==4.6.5
 pexif==0.15
 Pillow==7.0.0
 python-docx==0.8.10
